@@ -1,0 +1,23 @@
+# Local runtime and credentials
+/ComfyUI/
+/.venv/
+/.tools/
+/.data/
+.env
+.env.*
+
+# Editor and Python caches
+.DS_Store
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+*.py[cod]
+
+# Generated images and run reports
+/artifacts/
+*.log
+
+# Build output
+/bin/
+/dist/
+*.test
