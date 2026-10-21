@@ -1,0 +1,32 @@
+FROM python:3.13-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends git curl libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN git init . \
+    && git remote add origin https://github.com/Comfy-Org/ComfyUI.git \
+    && git fetch --depth 1 origin 7a28332047b6af638dc6c7f72ef3481a718769fd \
+    && git checkout FETCH_HEAD \
+    && rm -rf .git
+
+RUN pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
+
+RUN curl --fail --location --retry 3 \
+    https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors \
+    --output models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors \
+    && echo 'e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916  models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors' | sha256sum -c -
+
+COPY custom_nodes/lab_image_adjust /app/custom_nodes/lab_image_adjust
+
+RUN useradd --uid 65532 --create-home comfy \
+    && mkdir -p /app/output /app/input /app/temp /app/user \
+    && chown -R 65532:65532 /app/output /app/input /app/temp /app/user
+
+USER comfy
+
+EXPOSE 8188
+
+CMD ["python", "main.py", "--cpu", "--listen", "0.0.0.0", "--port", "8188", "--disable-auto-launch", "--preview-method", "none", "--temp-directory", "/tmp/comfy"]

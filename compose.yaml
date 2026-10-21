@@ -1,0 +1,40 @@
+services:
+  api:
+    build: .
+    env_file: .data/api.env
+    environment:
+      COMFY_URL: http://comfy:8188
+    ports:
+      - "127.0.0.1:8088:8088"
+    volumes:
+      - jobs:/data
+    depends_on:
+      comfy:
+        condition: service_healthy
+    restart: unless-stopped
+
+  comfy:
+    build:
+      context: .
+      dockerfile: Dockerfile.comfy
+    ports:
+      - "127.0.0.1:8188:8188"
+    volumes:
+      - output:/app/output
+      - user:/app/user
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8188/system_stats', timeout=5)"
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  jobs:
+  output:
+  user:
